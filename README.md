@@ -12,8 +12,7 @@ The model is derived from:
 ## Model Description
 
 ### Variables included
--Arrival from:
-  - Home
+  - Arrival from home
 - Site of intubation:
   - Emergency Department
   - Ward

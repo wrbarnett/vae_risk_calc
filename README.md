@@ -12,8 +12,9 @@ The model is derived from:
 ## Model Description
 
 ### Variables included
-- Site of intubation:
+-Arrival from:
   - Home
+- Site of intubation:
   - Emergency Department
   - Ward
 - Comorbidities:

@@ -1,0 +1,172 @@
+import math
+import streamlit as st
+import pandas as pd
+
+st.set_page_config(page_title="VAE 7-day Risk Calculator", page_icon="🩺", layout="centered")
+
+# Coefficients from the R Cox proportional hazards model
+COEFFICIENTS = {
+    "home": -0.3245,
+    "bmigroup": 0.3208,
+    "chf": -0.4487,
+    "cad": 0.3481,
+    "kidney": -0.6391,
+    "lung": 0.3962,
+    "ed": 0.5443,
+    "ward": 0.8233,
+    "tpn": 0.3674,
+}
+
+# Derived from the R output shown by the user
+# survfit(coxfit, times = 7)$surv = 0.6693146
+BASELINE_SURVIVAL_7D = 0.6693146
+
+# R model center from cph output
+CENTER = 0.2556
+
+DISPLAY_LABELS = {
+    "home": "Home",
+    "bmigroup": "BMI ≥ 30",
+    "chf": "Congestive Heart Failure (CHF)",
+    "cad": "Coronary Artery Disease (COPD)",
+    "kidney": "Kidney Disease",
+    "lung": "Chronic Obstrutive Pulmonary Disease (COPD)",
+    "ed": "Emergency Department",
+    "ward": "Ward",
+    "tpn": "TPN",
+}
+
+HELP_TEXT = {
+    "home": "Yes if the patient came from home.",
+    "bmigroup": "Yes if the patient meets the BMI threshold.",
+    "chf": "Yes if CHF is present.",
+    "cad": "Yes if CAD is present.",
+    "kidney": "Yes if kidney disease is present.",
+    "lung": "Yes if COPD is present.",
+    "ed": "Yes if the patient was admitted from the emergency department.",
+    "ward": "Yes if the patient was intubated on the ward.",
+    "tpn": "Yes if TPN was administered",
+}
+
+def calculate_7day_risk(inputs: dict[str, int]):
+    rows = []
+    beta_x = 0.0
+
+    for key, coeff in COEFFICIENTS.items():
+        value = int(inputs.get(key, 0))
+        contribution = coeff * value
+        beta_x += contribution
+        rows.append({
+            "Predictor": DISPLAY_LABELS[key],
+            "Coefficient": coeff,
+            "Input (0/1)": value,
+            "Contribution": contribution,
+        })
+
+    # Cox prediction using the model center from R
+    lp_centered = beta_x - CENTER
+    relative_risk = math.exp(lp_centered)
+    survival_7d = BASELINE_SURVIVAL_7D ** relative_risk
+    risk_7d = 1.0 - survival_7d
+
+    return rows, beta_x, lp_centered, relative_risk, survival_7d, risk_7d
+
+st.title("VAE Risk Calculator")
+st.caption("Cox model: S(7|X) = S₀(7) ^ exp(βX - center)")
+
+st.markdown(
+    """
+### Equation used
+
+This app now follows an R model.
+
+- **Linear predictor**: `βX = Σ(coefficient × indicator)`
+- **Centered predictor**: `βX - center`
+- **Relative risk**: `exp(βX - center)`
+- **7-day survival**: `S(7|X) = S0(7) ^ exp(βX - center)`
+- **7-day risk**: `1 - S(7|X)`
+
+Using R output:
+
+- `S0(7) = 0.6693146`
+- `center = 0.2556`
+
+This version is specific to **7-day prediction**.
+"""
+)
+
+with st.form("vae_7day_form"):
+    st.subheader("Patient factors")
+    selections = {}
+    cols = st.columns(2)
+
+    for i, key in enumerate(COEFFICIENTS):
+        with cols[i % 2]:
+            choice = st.selectbox(
+                DISPLAY_LABELS[key],
+                options=["No", "Yes"],
+                index=0,
+                key=f"sel_{key}",
+                help=HELP_TEXT[key],
+            )
+            selections[key] = 1 if choice == "Yes" else 0
+
+    submitted = st.form_submit_button("Calculate 7-day risk", use_container_width=True)
+
+if submitted:
+    rows, beta_x, lp_centered, relative_risk, survival_7d, risk_7d = calculate_7day_risk(selections)
+
+    risk_7d = max(0.0, min(1.0, risk_7d))
+
+    st.subheader("Results")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("βX", f"{beta_x:.4f}")
+    c2.metric("βX - center", f"{lp_centered:.4f}")
+    c3.metric("exp(βX - center)", f"{relative_risk:.4f}")
+
+    c4, c5 = st.columns(2)
+    c4.metric("7-day Survival", f"{survival_7d:.6f}")
+    c5.metric("7-day Risk", f"{risk_7d:.6f}")
+
+    st.progress(risk_7d)
+    st.write(f"### Estimated 7-day Risk: {risk_7d:.2%}")
+
+    details_df = pd.DataFrame(rows)
+    st.subheader("Calculation details")
+    st.dataframe(details_df, use_container_width=True, hide_index=True)
+
+    with st.expander("Show full equation details"):
+        st.code(
+            f"""beta_x = {beta_x:.6f}
+center = {CENTER:.4f}
+
+lp_centered = beta_x - center
+lp_centered = {beta_x:.6f} - {CENTER:.4f}
+lp_centered = {lp_centered:.6f}
+
+relative_risk = exp(lp_centered)
+relative_risk = exp({lp_centered:.6f})
+relative_risk = {relative_risk:.6f}
+
+survival_7d = S0(7) ** relative_risk
+survival_7d = {BASELINE_SURVIVAL_7D:.7f} ** {relative_risk:.6f}
+survival_7d = {survival_7d:.6f}
+
+risk_7d = 1 - survival_7d
+risk_7d = {risk_7d:.6f}""",
+            language="text",
+        )
+
+st.divider()
+st.markdown(
+    """
+### Notes
+- Inputs are coded as **No = 0** and **Yes = 1**.
+- The model is currently valid for **7-day prediction only** because only `S0(7)` was supplied.
+- References: 
+
+1. Kubbara A, Barnett WR, Safi F, Khuder S, Macko J, Assaly R. Case-control study 
+investigating parameters affecting ventilator-associated events in mechanically ventilated patients. 
+Am J Infect Control. 2019 Apr;47(4):462-464. doi: 10.1016/j.ajic.2018.09.024. Epub 2018 Dec 4. PMID: 30522840.`
+"""
+)

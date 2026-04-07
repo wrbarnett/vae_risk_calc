@@ -4,7 +4,6 @@
 
 <img width="256" height="256" alt="Screenshot 2026-04-07 081412" src="https://github.com/user-attachments/assets/46dff2f2-7507-4425-8e3d-2370a3b0e84e" />
 
-
 ## Overview
 This application implements a **Cox proportional hazards model** to estimate the **7-day risk of ventilator-associated events (VAEs)** in mechanically ventilated patients.
 

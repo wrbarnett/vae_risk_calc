@@ -71,7 +71,7 @@ def calculate_7day_risk(inputs: dict[str, int]):
 
     return rows, beta_x, lp_centered, relative_risk, survival_7d, risk_7d
 
-st.title("VAE Risk Calculator")
+st.title("AcuVent")
 st.caption("Cox model: S(7|X) = S₀(7) ^ exp(βX - center)")
 
 st.markdown(

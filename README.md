@@ -1,5 +1,10 @@
 # 🩺 VAE 7-Day Risk Calculator (Cox Model)
 
+<img width="256" height="256" alt="Screenshot 2026-04-07 081223" src="https://github.com/user-attachments/assets/62ccf068-5e95-4eb5-888b-d3e860bf8343" />
+
+<img width="256" height="256" alt="Screenshot 2026-04-07 081412" src="https://github.com/user-attachments/assets/46dff2f2-7507-4425-8e3d-2370a3b0e84e" />
+
+
 ## Overview
 This application implements a **Cox proportional hazards model** to estimate the **7-day risk of ventilator-associated events (VAEs)** in mechanically ventilated patients.
 

@@ -1,4 +1,6 @@
-# 🩺 VAE 7-Day Risk Calculator (Cox Model)
+# 🩺 AcuVent
+
+<img width="256" height="256" alt="image" src="https://github.com/user-attachments/assets/25f2d10a-f786-48b0-8a23-7cfba5b62968" />
 
 <img width="256" height="256" alt="Screenshot 2026-04-07 081223" src="https://github.com/user-attachments/assets/62ccf068-5e95-4eb5-888b-d3e860bf8343" />
 
